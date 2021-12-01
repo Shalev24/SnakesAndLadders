@@ -10,7 +10,6 @@ namespace SnakesAndLadders
     {
         public int PlayerNumber { get; set; }
         public int CurrentPlayerPosition { get; set; }
-        public int Name { get; set; }
 
     }
 }

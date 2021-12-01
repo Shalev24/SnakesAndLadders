@@ -10,15 +10,14 @@ namespace SnakesAndLadders
     public class GameServices
     {
         Player currentPlayer;
-        Player[] playerQueue; //array of Player ojects called playerQ ?? 
+        Player[] playerQueue; 
         const int totalPlayers = 2;
         const int BoardSize = 100;
-        Cell[] board; // is this here so that all methods can have access to the same board and manipulate array respectivaly ??
+        Cell[] board; 
 
 
         public GameServices()
         {
-            //totalPlayers = NumberOfPlayers;
             board = CreateBoard(BoardSize);
             playerQueue = CreatePlayers(totalPlayers);
         }
@@ -26,7 +25,6 @@ namespace SnakesAndLadders
 
         private Cell[] CreateBoard(int size)
         {
-            //?? why here and also in line 16
             Cell[] board = new Cell[size];
 
             for(int i = 0; i < size; i++)
@@ -56,7 +54,7 @@ namespace SnakesAndLadders
             int randomLadderCell = rand.Next(12, 20);
 
             var l = new Ladder();
-            l.CellNumber = randomLadderCell; // start of ladder cell
+            l.CellNumber = randomLadderCell; 
             l.TopCell = topOfLadderCell;
             board[randomLadderCell - 1] = l;
 
@@ -70,9 +68,9 @@ namespace SnakesAndLadders
             return board;
         }
 
-        private Player[] CreatePlayers(int amountOfplayers) // does this mean I'm returning an array of type players object ? 
+        private Player[] CreatePlayers(int amountOfplayers) 
         {
-           var players = new Player[amountOfplayers]; // ?? what is this initilization 
+           var players = new Player[amountOfplayers]; 
 
             for(int i = 0; i < amountOfplayers; i++)
             {
