@@ -9,24 +9,26 @@ namespace SnakesAndLadders
 {
     public class GameServices
     {
-        Player currentPlayer;
-        Player[] playerQueue; 
+        Player currentPlayer; // current player rolling dice
+        Player[] playerQueue; // helps keep track of who's next to roll
         const int totalPlayers = 2;
-        const int BoardSize = 100;
-        Cell[] board; 
+        const int boradSize = 100;
+        Cell[] board;
 
 
-        public GameServices()
+        public GameServices(int s, int l) // contructor with 2 int params(number of snakes and ladders passed in from user input)
         {
-            board = CreateBoard(BoardSize);
+            board = CreateBoard(boradSize, s, l);
             playerQueue = CreatePlayers(totalPlayers);
         }
 
-
-        private Cell[] CreateBoard(int size)
+        // Board setup
+        // Creates a board according to size and randomly places snakes, ladders and golden cells on board
+        private Cell[] CreateBoard(int size, int snakes, int ladders)
         {
             Cell[] board = new Cell[size];
 
+            // fill board with cell numbers
             for(int i = 0; i < size; i++)
             {
                 var c = new Cell();
@@ -35,52 +37,71 @@ namespace SnakesAndLadders
             }
 
 
-            // Position Snakes and Ladders
-
+            // Position Snakes, Ladders and Golden cell on board
+            
             // Snakes
+            for (var i = 0; i < snakes; i++)
+            {
+                Random rand = new Random();
+                int randomSnakeCell = rand.Next(30, size - 4); // snake head between 30 and 96
+                int snakeTailCell = rand.Next(6, randomSnakeCell - 10); // snake tail between 6 and 84
+                                                                        // -10 to ensure snake tail is not on same line as snake head
 
-            Random rand = new Random();
-            int randomSnakeCell = rand.Next(92, 97);
-            int snakeTailCell = rand.Next(21, 30);
+                // places snake on board
+                var penalty = new Snake();
+                penalty.CellNumber = randomSnakeCell;
+                penalty.TailCell = snakeTailCell;
+                board[randomSnakeCell - 1] = penalty;
 
-            var s = new Snake();
-            s.CellNumber = randomSnakeCell;
-            s.TailCell = snakeTailCell;
-            board[randomSnakeCell - 1] = s;
-
+            }
 
             // Ladders
-            int topOfLadderCell = rand.Next(85, 90);
-            int randomLadderCell = rand.Next(12, 20);
+            for (int i = 0; i < ladders; i++)
+            {
+                Random rand = new Random();
 
-            var l = new Ladder();
-            l.CellNumber = randomLadderCell; 
-            l.TopCell = topOfLadderCell;
-            board[randomLadderCell - 1] = l;
+                int topOfLadderCell = rand.Next(30, size - 1); // top of ladder between 30 and 96
+                int randomLadderCell = rand.Next(1, topOfLadderCell - 10); // start of ladder between 2 and 89
 
-            //Golden Cell
-            int randomGoldCell = rand.Next(60, 65);
+                // places ladder on board
+                var reward = new Ladder();
+                reward.CellNumber = randomLadderCell;
+                reward.TopCell = topOfLadderCell;
+                board[randomLadderCell - 1] = reward;
+            }
 
-            var gold = new GoldenCell();
-            gold.CellNumber = randomGoldCell;
-            board[randomGoldCell - 1] = gold;
+            // Golden cells
+            for (int i = 0; i < 2; i++)
+            {
+                Random rand = new Random();
+                int randomGoldCell = rand.Next(30, 75);
+
+                var gold = new GoldenCell();
+                gold.CellNumber = randomGoldCell;
+                board[randomGoldCell - 1] = gold;
+            }
 
             return board;
-        }
 
+        } // end CreateBoard
+
+        
+        // creates players array to access players by number(1 or 2) and adjust current positions
         private Player[] CreatePlayers(int amountOfplayers) 
         {
-           var players = new Player[amountOfplayers]; 
+           var players = new Player[amountOfplayers]; // create players array
 
-            for(int i = 0; i < amountOfplayers; i++)
+            // set each players number and gives them their current position
+            for (int i = 0; i < amountOfplayers; i++)
             {
                 players[i] = new Player();
                 players[i].CurrentPlayerPosition = 0;
                 players[i].PlayerNumber = i + 1;
             }
 
-            return players;
-        }
+            return players; // returns players array with all players current position and player number
+
+        } // end CreatePlayers
 
         private int RollDice()
         {
@@ -99,13 +120,14 @@ namespace SnakesAndLadders
         }
 
 
+        // ensures next player rolls and print each players postion after each round 
         private void NextPlayerRoll()
         {
             if(currentPlayer.PlayerNumber < totalPlayers)
             {
-                currentPlayer = playerQueue[(currentPlayer.PlayerNumber - 1) + 1];
+                currentPlayer = playerQueue[(currentPlayer.PlayerNumber - 1) + 1]; // sets current player to next player(in this case to player 2)
             }
-            else
+            else // round is over,all players have rolled and displays each players current position
             {
                 Console.WriteLine($"Player 1 location is {playerQueue[0].CurrentPlayerPosition}\nPlayer 2 location is {playerQueue[1].CurrentPlayerPosition}\n");
                 currentPlayer = playerQueue[0];
@@ -113,69 +135,74 @@ namespace SnakesAndLadders
         }
 
 
+        // adjust players positions accordingly after roll
         private void MovePlayer(int rolledNumber)
         {
             Console.WriteLine($"Player {currentPlayer.PlayerNumber} you rolled {rolledNumber}.");
             int moveTo = currentPlayer.CurrentPlayerPosition;
 
-            if ((moveTo + rolledNumber) <= board.Length)
+            if ((moveTo + rolledNumber) < board.Length)
             {
-                moveTo += rolledNumber;
+                moveTo += rolledNumber; // new location on board to be moved to
             }
             else
             {
-                moveTo = 100;
+                moveTo = 100; // if above condition is not met, it means player landed on block 100 or greater, Hense we have a winner
             }
 
-            //only if a player landed on a ladder, snake or golden cell enter loop otherwise no need to check conditions
-            while (board[moveTo - 1].GetType() == typeof(GoldenCell) || board[moveTo - 1].GetType() == typeof(Ladder) || board[moveTo - 1].GetType() == typeof(Snake))
+            // CHECKS IF PLAYER LANDED ON SNAKE, LADDER OR GOLDEN CELL
+
+            // Checks if player landed on snake. If yes, moves player to snake tail
+            if (board[moveTo - 1].GetType() == typeof(Snake))
             {
-                // Checks if player ladded on snake and moves current player accordingly
-                if (board[moveTo - 1].GetType() == typeof(Snake))
+                //var s = new Snake();
+                //moveTo = s.TailCell;
+                moveTo = (board[moveTo - 1] as Snake).TailCell; //??
+                Console.WriteLine("Player " + currentPlayer.PlayerNumber + " You ladded on a SNAKE!! Moving to " + moveTo);
+            }
+
+            // Checks if player landed on ladder. If yes, moves current player to top of ladder
+            if (board[moveTo - 1].GetType() == typeof(Ladder))
+            {
+                moveTo = (board[moveTo - 1] as Ladder).TopCell; //??
+                Console.WriteLine("Player " + currentPlayer.PlayerNumber + " You have a LADDER!! Moving to " + moveTo);
+            }
+
+            // checks if current player landed on gold cell and if other player is leading
+            if(board[moveTo - 1].GetType() == typeof(GoldenCell))
+            {
+                // checks if player 1 position is less than players 2 and if yes, swap positions
+                if(currentPlayer.PlayerNumber == 1 && currentPlayer.CurrentPlayerPosition < playerQueue[1].CurrentPlayerPosition)
                 {
-                    moveTo = (board[moveTo - 1] as Snake).TailCell;
-                    Console.WriteLine("Player " + currentPlayer.PlayerNumber + " You ladded on a SNAKE!! Moving to " + moveTo);
+                    var leadingCell = playerQueue[1].CurrentPlayerPosition;
+                    playerQueue[1].CurrentPlayerPosition = currentPlayer.CurrentPlayerPosition;
+                    playerQueue[0].CurrentPlayerPosition = leadingCell;
+
+                    Console.WriteLine("GOLDEN BLOCK :) NEW LEADER! Player " + currentPlayer.PlayerNumber + " you have been moved to block " + leadingCell);
+                    Console.WriteLine("Sorry Player " + playerQueue[1].PlayerNumber + " you've dropped to block " + playerQueue[1].CurrentPlayerPosition);
+
+                    moveTo = playerQueue[0].CurrentPlayerPosition;
+
                 }
 
-                // Checks if player ladded on ladder and moves current player accordingly
-                if (board[moveTo - 1].GetType() == typeof(Ladder))
+                //checks if player 2 position is less than players 1 and if yes, swap positions
+                if (currentPlayer.PlayerNumber == 2 && currentPlayer.CurrentPlayerPosition < playerQueue[0].CurrentPlayerPosition)
                 {
-                    moveTo = (board[moveTo - 1] as Ladder).TopCell;
-                    Console.WriteLine("Player " + currentPlayer.PlayerNumber + " You have a LADDER!! Moving to " + moveTo);
+                    var leadingCell = playerQueue[0].CurrentPlayerPosition;
+                    playerQueue[0].CurrentPlayerPosition = currentPlayer.CurrentPlayerPosition;
+                    playerQueue[1].CurrentPlayerPosition = leadingCell;
+
+                    Console.WriteLine("NEW LEADER!! Player " + currentPlayer.PlayerNumber + " you have been moved to block " + leadingCell);
+                    Console.WriteLine("Sorry Player " + playerQueue[0].PlayerNumber + " you've dropped to block " + playerQueue[0].CurrentPlayerPosition);
+
+                    moveTo = playerQueue[1].CurrentPlayerPosition;
+
                 }
-
-                // checkes if  player landed on Gold cell and if other player is leading
-                if(board[moveTo - 1].GetType() == typeof(GoldenCell))
-                {
-                    if(currentPlayer.PlayerNumber == 1 && currentPlayer.CurrentPlayerPosition < playerQueue[1].CurrentPlayerPosition)
-                    {
-                        var leadingCell = playerQueue[1].CurrentPlayerPosition;
-                        playerQueue[1].CurrentPlayerPosition = currentPlayer.CurrentPlayerPosition;
-                        playerQueue[0].CurrentPlayerPosition = leadingCell;
-
-                        Console.WriteLine("GOLDEN BLOCK :) NEW LEADER! Player " + currentPlayer.PlayerNumber + " you have been moved to block " + leadingCell);
-                        Console.WriteLine("Sorry Player " + playerQueue[1].PlayerNumber + " you've dropped to block " + playerQueue[1].CurrentPlayerPosition);
-
-                        moveTo = playerQueue[0].CurrentPlayerPosition;
-
-                    }
-                    else if (currentPlayer.PlayerNumber == 2 && currentPlayer.CurrentPlayerPosition < playerQueue[0].CurrentPlayerPosition)
-                    {
-                        var leadingCell = playerQueue[0].CurrentPlayerPosition;
-                        playerQueue[0].CurrentPlayerPosition = currentPlayer.CurrentPlayerPosition;
-                        playerQueue[1].CurrentPlayerPosition = leadingCell;
-
-                        Console.WriteLine("NEW LEADER!! Player " + currentPlayer.PlayerNumber + " you have been moved to block " + leadingCell);
-                        Console.WriteLine("Sorry Player " + playerQueue[0].PlayerNumber + " you've dropped to block " + playerQueue[0].CurrentPlayerPosition);
-
-                        moveTo = playerQueue[1].CurrentPlayerPosition;
-
-                    }
-                }
-            } // end while loop
+            }
 
             currentPlayer.CurrentPlayerPosition = moveTo;
-        }
+
+        } // end MovePlayer
 
 
         public void Play()
